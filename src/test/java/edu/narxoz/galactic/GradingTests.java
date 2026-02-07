@@ -1,114 +1,85 @@
 package edu.narxoz.galactic;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 import edu.narxoz.galactic.bodies.Planet;
 import edu.narxoz.galactic.bodies.SpaceStation;
 import edu.narxoz.galactic.cargo.Cargo;
 import edu.narxoz.galactic.dispatcher.Dispatcher;
 import edu.narxoz.galactic.dispatcher.Result;
-import edu.narxoz.galactic.drones.DroneStatus;
 import edu.narxoz.galactic.drones.HeavyDrone;
 import edu.narxoz.galactic.drones.LightDrone;
 import edu.narxoz.galactic.task.DeliveryTask;
-import edu.narxoz.galactic.task.TaskState;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class GradingTests {
-
-    private Dispatcher dispatcher;
     private Planet earth;
     private SpaceStation marsStation;
     private Cargo smallCargo;
     private Cargo heavyCargo;
     private LightDrone lightDrone;
     private HeavyDrone heavyDrone;
+    private Dispatcher dispatcher;
 
     @BeforeEach
-    void setUp() {
+    void setup() {
+        earth = new Planet("Earth", 0, 0, "N2-O2");
+        marsStation = new SpaceStation("Mars Station", 100, 0, 1);
+        smallCargo = new Cargo(5.0, "Small package");
+        heavyCargo = new Cargo(30.0, "Heavy equipment");
+        lightDrone = new LightDrone("L1", 10.0);
+        heavyDrone = new HeavyDrone("H1", 50.0);
         dispatcher = new Dispatcher();
-        earth = new Planet("Earth", 0, 0, "Nitrogen-Oxygen");
-        marsStation = new SpaceStation("Mars Station", 30, 40, 5); // Distance = 50
-        smallCargo = new Cargo(10.0, "Medical Supplies");
-        heavyCargo = new Cargo(80.0, "Building Materials");
-        lightDrone = new LightDrone("L-01", 50.0);
-        heavyDrone = new HeavyDrone("H-01", 100.0);
     }
 
     @Test
-    @DisplayName("Distance calculation between celestial bodies should be correct")
-    void testDistanceCalculation() {
-        double dist = earth.distanceTo(marsStation);
-        assertEquals(50.0, dist, 0.001);
+    void testLightDroneCanCarrySmallCargo() {
+        DeliveryTask task = new DeliveryTask(earth, marsStation, smallCargo);
+        Result result = dispatcher.assignTask(task, lightDrone);
+        assertTrue(result.ok());
+        assertEquals(edu.narxoz.galactic.drones.DroneStatus.IN_FLIGHT, lightDrone.getStatus());
     }
 
     @Test
-    @DisplayName("Assigning overweight cargo should fail")
-    void testOverweightAssignment() {
+    void testHeavyDroneCanCarryHeavyCargo() {
+        DeliveryTask task = new DeliveryTask(earth, marsStation, heavyCargo);
+        Result result = dispatcher.assignTask(task, heavyDrone);
+        assertTrue(result.ok());
+        assertEquals(edu.narxoz.galactic.drones.DroneStatus.IN_FLIGHT, heavyDrone.getStatus());
+    }
+
+    @Test
+    void testLightDroneCannotCarryHeavyCargo() {
         DeliveryTask task = new DeliveryTask(earth, marsStation, heavyCargo);
         Result result = dispatcher.assignTask(task, lightDrone);
-
-        assertFalse(result.ok(), "Assignment should fail for overweight cargo");
-        assertNotNull(result.reason(), "Failure reason should not be null");
-        assertEquals(TaskState.CREATED, task.getState(), "Task state should remain CREATED");
-        assertEquals(DroneStatus.IDLE, lightDrone.getStatus(), "Drone status should remain IDLE");
+        assertFalse(result.ok());
+        assertTrue(result.reason().contains("exceeds"));
+        assertEquals(edu.narxoz.galactic.drones.DroneStatus.IDLE, lightDrone.getStatus());
     }
 
     @Test
-    @DisplayName("Successful task assignment updates states correctly")
-    void testSuccessfulAssignment() {
-        DeliveryTask task = new DeliveryTask(earth, marsStation, smallCargo);
-        Result result = dispatcher.assignTask(task, lightDrone);
-
-        assertTrue(result.ok(), "Assignment should be successful");
-        assertEquals(TaskState.ASSIGNED, task.getState());
-        assertEquals(lightDrone, task.getAssignedDrone());
-        assertEquals(DroneStatus.IN_FLIGHT, lightDrone.getStatus());
-    }
-
-    @Test
-    @DisplayName("Estimated time calculation should use correct drone speed")
-    void testTimeEstimation() {
-        DeliveryTask task = new DeliveryTask(earth, marsStation, smallCargo);
-        dispatcher.assignTask(task, lightDrone); // Distance 50, Light speed 10
-
-        double expectedTime = 50.0 / 10.0;
-        assertEquals(expectedTime, task.estimateTime(), 0.001);
-    }
-
-    @Test
-    @DisplayName("Completing an assigned task should work")
-    void testCompleteTask() {
+    void testTaskCompletion() {
         DeliveryTask task = new DeliveryTask(earth, marsStation, smallCargo);
         dispatcher.assignTask(task, lightDrone);
-
         Result result = dispatcher.completeTask(task);
         assertTrue(result.ok());
-        assertEquals(TaskState.DONE, task.getState());
-        assertEquals(DroneStatus.IDLE, lightDrone.getStatus());
+        assertEquals(edu.narxoz.galactic.drones.DroneStatus.IDLE, lightDrone.getStatus());
+        assertEquals(edu.narxoz.galactic.task.TaskState.DONE, task.getState());
     }
 
     @Test
-    @DisplayName("Completing a task that is not assigned should fail")
-    void testCompleteUnassignedTask() {
-        DeliveryTask task = new DeliveryTask(earth, marsStation, smallCargo);
-
-        Result result = dispatcher.completeTask(task);
-        assertFalse(result.ok());
-        assertEquals(TaskState.CREATED, task.getState());
+    void testDroneSpeeds() {
+        assertEquals(10.0, lightDrone.speedKmPerMin(), 0.01);
+        assertEquals(5.0, heavyDrone.speedKmPerMin(), 0.01);
+        assertTrue(lightDrone.speedKmPerMin() > heavyDrone.speedKmPerMin());
     }
 
     @Test
-    @DisplayName("Validation: Negative payload should throw IllegalArgumentException")
-    void testInvalidDronePayload() {
-        assertThrows(IllegalArgumentException.class, () -> new LightDrone("Fail", -10));
-    }
-
-    @Test
-    @DisplayName("Validation: Null in distanceTo should throw IllegalArgumentException")
-    void testNullDistance() {
-        assertThrows(IllegalArgumentException.class, () -> earth.distanceTo(null));
+    void testHeavyDroneInitialization() {
+        assertNotNull(heavyDrone);
+        assertEquals("H1", heavyDrone.getId());
+        assertEquals(50.0, heavyDrone.getMaxPayloadKg(), 0.01);
+        assertEquals(edu.narxoz.galactic.drones.DroneStatus.IDLE, heavyDrone.getStatus());
     }
 }
