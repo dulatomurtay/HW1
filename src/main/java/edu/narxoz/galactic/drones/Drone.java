@@ -7,7 +7,7 @@ public abstract class Drone {
 
     protected Drone(String id, double maxPayloadKg) {
         if (maxPayloadKg <= 0) {
-            throw new IllegalArgumentException("Max payload must be positive");
+            throw new IllegalArgumentException("maxPayloadKg must be positive");
         }
         this.id = id;
         this.maxPayloadKg = maxPayloadKg;
@@ -26,8 +26,7 @@ public abstract class Drone {
         return maxPayloadKg;
     }
 
-    // ВАЖНО: ДОЛЖЕН БЫТЬ public
-    public void setStatus(DroneStatus status) {
+    public  void setStatus(DroneStatus status) {
         this.status = status;
     }
 

@@ -11,64 +11,49 @@ import edu.narxoz.galactic.task.DeliveryTask;
 
 public class GalacticDemo {
     public static void main(String[] args) {
-        System.out.println("=== Galactic Drone Delivery Demo ===\n");
-        
-        // Create celestial bodies
+        System.out.println("=== Galactic Delivery Drones Demo ===\n");
+
         Planet earth = new Planet("Earth", 0, 0, "Nitrogen-Oxygen");
-        SpaceStation alpha = new SpaceStation("Alpha Station", 100, 100, 5);
-        
-        // Create cargo - both will be used
+        SpaceStation alpha = new SpaceStation("Alpha Station", 100, 100, 1);
+
+        Cargo heavyCargo = new Cargo(50.0, "Construction materials");
         Cargo lightCargo = new Cargo(5.0, "Medical supplies");
-        Cargo heavyCargo = new Cargo(25.0, "Construction materials");
-        
-        // Create drones
+
         LightDrone lightDrone = new LightDrone("LD-001", 10.0);
-        HeavyDrone heavyDrone = new HeavyDrone("HD-001", 50.0);
-        
-        // Create tasks - both will be used
-        DeliveryTask lightTask = new DeliveryTask(earth, alpha, lightCargo);
-        DeliveryTask heavyTask = new DeliveryTask(earth, alpha, heavyCargo);
-        
+        HeavyDrone heavyDrone = new HeavyDrone("HD-001", 100.0);
+
+        DeliveryTask task1 = new DeliveryTask(earth, alpha, heavyCargo);
+        DeliveryTask task2 = new DeliveryTask(alpha, earth, lightCargo);
+
         Dispatcher dispatcher = new Dispatcher();
-        
-        System.out.println("1. Assign light cargo to light drone:");
-        Result lightResult = dispatcher.assignTask(lightTask, lightDrone);
-        System.out.println("   Result: " + (lightResult.ok() ? "Success" : "Failure"));
-        System.out.println("   Reason: " + lightResult.reason());
-        System.out.println("   Drone status: " + lightDrone.getStatus());
-        System.out.println("   Task state: " + lightTask.getState() + "\n");
-        
-        System.out.println("2. Try to assign heavy cargo to light drone:");
-        Result result1 = dispatcher.assignTask(heavyTask, lightDrone);
-        System.out.println("   Result: " + (result1.ok() ? "Success" : "Failure"));
-        System.out.println("   Reason: " + result1.reason());
-        System.out.println("   Drone status: " + lightDrone.getStatus());
-        System.out.println("   Task state: " + heavyTask.getState() + "\n");
-        
-        System.out.println("3. Assign heavy cargo to heavy drone:");
-        Result result2 = dispatcher.assignTask(heavyTask, heavyDrone);
-        System.out.println("   Result: " + (result2.ok() ? "Success" : "Failure"));
-        System.out.println("   Drone status: " + heavyDrone.getStatus());
-        System.out.println("   Task state: " + heavyTask.getState() + "\n");
-        
-        System.out.println("4. Estimate delivery time:");
-        double time = heavyTask.estimateTime();
-        System.out.println("   Distance: " + earth.distanceTo(alpha) + " km");
-        System.out.println("   Drone speed: " + heavyDrone.speedKmPerMin() + " km/min");
-        System.out.println("   Delivery time: " + time + " minutes\n");
-        
-        System.out.println("5. Complete the heavy task:");
-        Result result3 = dispatcher.completeTask(heavyTask);
-        System.out.println("   Result: " + (result3.ok() ? "Success" : "Failure"));
-        System.out.println("   Final drone status: " + heavyDrone.getStatus());
-        System.out.println("   Final task state: " + heavyTask.getState());
-        
-        System.out.println("\n6. Complete the light task:");
-        Result lightCompleteResult = dispatcher.completeTask(lightTask);
-        System.out.println("   Result: " + (lightCompleteResult.ok() ? "Success" : "Failure"));
-        System.out.println("   Light drone status: " + lightDrone.getStatus());
-        System.out.println("   Light task state: " + lightTask.getState());
-        
-        System.out.println("\n=== Demo Completed ===");
+
+        System.out.println("1. Failure to assign overweight cargo to LightDrone:");
+        Result result1 = dispatcher.assignTask(task1, lightDrone);
+        System.out.println("Result: " + (result1.ok() ? "SUCCESS" : "FAILURE"));
+        System.out.println("Reason: " + result1.reason());
+        System.out.println("Drone status: " + lightDrone.getStatus());
+        System.out.println("Task state: " + task1.getState() + "\n");
+
+        System.out.println("2. Success with HeavyDrone:");
+        Result result2 = dispatcher.assignTask(task1, heavyDrone);
+        System.out.println("Result: " + (result2.ok() ? "SUCCESS" : "FAILURE"));
+        System.out.println("Drone status: " + heavyDrone.getStatus());
+        System.out.println("Task state: " + task1.getState() + "\n");
+
+        System.out.println("3. Estimated time:");
+        double time = task1.estimateTime();
+        System.out.println("Estimated time: " + String.format("%.2f", time) + " minutes\n");
+
+        System.out.println("4. Completion result + final statuses:");
+        Result result3 = dispatcher.completeTask(task1);
+        System.out.println("Completion result: " + (result3.ok() ? "SUCCESS" : "FAILURE"));
+        System.out.println("Final drone status: " + heavyDrone.getStatus());
+        System.out.println("Final task state: " + task1.getState() + "\n");
+
+        System.out.println("5. Testing LightDrone with light cargo:");
+        Result result4 = dispatcher.assignTask(task2, lightDrone);
+        System.out.println("Light cargo assignment: " + (result4.ok() ? "SUCCESS" : "FAILURE"));
+
+        System.out.println("\n=== Demo completed ===");
     }
 }

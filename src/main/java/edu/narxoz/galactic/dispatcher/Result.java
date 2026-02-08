@@ -1,16 +1,21 @@
 package edu.narxoz.galactic.dispatcher;
 
-public record Result(boolean ok, String reason) {
-    public Result {
+public class Result {
+    private final boolean ok;
+    private final String reason;
+
+    public Result(boolean ok, String reason) {
         if (!ok && (reason == null || reason.isEmpty())) {
-            throw new IllegalArgumentException("Failure result must have a non-empty reason");
+            throw new IllegalArgumentException("Failure must have a reason");
         }
+        this.ok = ok;
+        this.reason = reason;
     }
-    
+
     public boolean ok() {
         return ok;
     }
-    
+
     public String reason() {
         return reason;
     }

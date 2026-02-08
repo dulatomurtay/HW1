@@ -39,24 +39,21 @@ public class DeliveryTask {
         return assignedDrone;
     }
 
-    // ИЗМЕНЕНО: добавлен public
     public void setState(TaskState state) {
         this.state = state;
     }
 
-    // ИЗМЕНЕНО: добавлен public
     public void setAssignedDrone(Drone drone) {
         this.assignedDrone = drone;
     }
 
     public double estimateTime() {
         if (assignedDrone == null) {
-            throw new IllegalStateException("Cannot estimate time: no drone assigned");
+            throw new IllegalStateException("No drone assigned to task");
         }
         if (assignedDrone.speedKmPerMin() <= 0) {
             throw new IllegalStateException("Drone speed must be positive");
         }
-        
         double distance = origin.distanceTo(destination);
         return distance / assignedDrone.speedKmPerMin();
     }
